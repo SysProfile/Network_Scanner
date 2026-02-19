@@ -184,6 +184,8 @@ Different vendors display MACs differently in their CLI:
 | `MIKROTIK_ROS` | MikroTik | CRS, CSS and CCR series |
 | `DLINK_CLI` | D-Link | DGS-1210, DGS-3000, DXS-3600 enterprise series |
 | `TPLINK_JETSTREAM` | TP-Link | T1600G, T2600G, T3700G enterprise series |
+| `HP_COMWARE5` | HP / H3C | V1910, V1905, E4200, A5500 — JE006A, JE009A, etc. |
+| `NETGEAR_PROSAFE` | NETGEAR | XS724TM, XS728T, XS748T, M4300, M5300 series |
 
 ---
 
