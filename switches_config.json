@@ -14,7 +14,10 @@
     { "id": 5, "ip": "192.168.1.5", "model_id": "HUAWEI_VRP" },
     { "id": 6, "ip": "192.168.1.6", "model_id": "HUAWEI_VRP" },
     { "id": 7, "ip": "192.168.1.7", "model_id": "HUAWEI_VRP" },
-    { "id": 8, "ip": "192.168.1.8", "model_id": "HUAWEI_VRP" }
+    { "id": 8, "ip": "192.168.1.8", "model_id": "HUAWEI_VRP" },
+    { "id": 9, "ip": "192.168.0.4", "model_id": "HP_COMWARE5" },
+    { "id": 10, "ip": "192.168.0.5", "model_id": "NETGEAR_PROSAFE" },
+    { "id": 11, "ip": "192.168.0.6", "model_id": "NETGEAR_PROSAFE" }
   ],
 
   "models": [
@@ -214,6 +217,50 @@
         "poe_status":     "show power inline interface GigabitEthernet {port}",
         "version":        "show version",
         "cpu_usage":      "show cpu-usage"
+      }
+    },
+
+    {
+      "id":          "HP_COMWARE5",
+      "brand":       "HP / H3C",
+      "description": "HP Comware 5 (H3C-based) — V1910, V1905, E4200, A5500 series (JE006A, JE009A, etc.)",
+      "mac_format":  "huawei",
+      "port_keywords":   ["GE", "GigabitEthernet", "Eth"],
+      "uplink_keywords": ["XGE", "Ten-GigabitEthernet", "Bridge-Aggregation"],
+      "error_strings":   ["Unrecognized command", "Wrong parameter", "Incomplete command"],
+      "commands": {
+        "find_mac":       "display mac-address {mac}",
+        "port_config":    "display current-configuration interface {port}",
+        "port_state":     "display interface {port} | include current state",
+        "port_vlan":      "display port vlan {port}",
+        "port_errors":    "display interface {port} | include error",
+        "arp_lookup":     "display arp | include {mac}",
+        "lldp_neighbors": "display lldp neighbor-information interface {port} brief",
+        "poe_status":     "display poe interface {port}",
+        "version":        "display version | include Comware",
+        "cpu_usage":      "display cpu-usage"
+      }
+    },
+
+    {
+      "id":          "NETGEAR_PROSAFE",
+      "brand":       "NETGEAR",
+      "description": "NETGEAR ProSAFE Smart/Managed — XS724TM, XS728T, XS748T, M4300, M5300 series",
+      "mac_format":  "colon",
+      "port_keywords":   ["0/", "1/0/", "2/0/", "3/0/"],
+      "uplink_keywords": ["3/0/", "lag", "po"],
+      "error_strings":   ["Invalid input", "Unknown command", "Ambiguous command"],
+      "commands": {
+        "find_mac":       "show mac-address-table address {mac}",
+        "port_config":    "show running-config interface {port}",
+        "port_state":     "show interfaces {port} | include Link",
+        "port_vlan":      "show interfaces {port} switchport",
+        "port_errors":    "show interfaces {port} | include error",
+        "arp_lookup":     "show arp | include {mac}",
+        "lldp_neighbors": "show lldp neighbors {port} detail",
+        "poe_status":     "show power inline {port}",
+        "version":        "show version | include Software",
+        "cpu_usage":      "show process cpu"
       }
     }
 
