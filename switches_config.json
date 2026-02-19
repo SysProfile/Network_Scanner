@@ -1,0 +1,221 @@
+{
+  "network": {
+    "interface":    "vmbr0",
+    "network_cidr": "192.168.0.0/18",
+    "dhcp_start":   "192.168.3.1",
+    "dhcp_end":     "192.168.8.254"
+  },
+
+  "switches": [
+    { "id": 1, "ip": "192.168.1.1", "model_id": "HUAWEI_VRP" },
+    { "id": 2, "ip": "192.168.1.2", "model_id": "HUAWEI_VRP" },
+    { "id": 3, "ip": "192.168.1.3", "model_id": "HUAWEI_VRP" },
+    { "id": 4, "ip": "192.168.1.4", "model_id": "HUAWEI_VRP" },
+    { "id": 5, "ip": "192.168.1.5", "model_id": "HUAWEI_VRP" },
+    { "id": 6, "ip": "192.168.1.6", "model_id": "HUAWEI_VRP" },
+    { "id": 7, "ip": "192.168.1.7", "model_id": "HUAWEI_VRP" },
+    { "id": 8, "ip": "192.168.1.8", "model_id": "HUAWEI_VRP" }
+  ],
+
+  "models": [
+
+    {
+      "id":          "HUAWEI_VRP",
+      "brand":       "Huawei",
+      "description": "Huawei VRP — S310, S5700, S5720, S6720, S5300, CE series",
+      "mac_format":  "huawei",
+      "port_keywords":  ["GE", "ETH", "XGE"],
+      "uplink_keywords": ["10GE", "XGE"],
+      "error_strings":  ["Error:", "Unrecognized command", "Wrong parameter"],
+      "commands": {
+        "find_mac":       "display mac-address {mac}",
+        "port_config":    "display current-configuration interface {port}",
+        "port_state":     "display interface {port} | include current state",
+        "port_vlan":      "display port vlan {port}",
+        "port_errors":    "display interface {port} | include errors",
+        "arp_lookup":     "display arp | include {mac}",
+        "lldp_neighbors": "display lldp neighbor interface {port} brief",
+        "poe_status":     "display poe power interface {port}",
+        "version":        "display version | include VRP",
+        "cpu_usage":      "display cpu-usage"
+      }
+    },
+
+    {
+      "id":          "CISCO_IOS",
+      "brand":       "Cisco",
+      "description": "Cisco IOS / IOS-XE — Catalyst 2960, 3560, 3750, 3850, 9200, 9300, 9500",
+      "mac_format":  "cisco",
+      "port_keywords":  ["Gi", "Fa", "Te", "Twe", "Eth", "Hu"],
+      "uplink_keywords": ["Te", "Twe", "Hu", "fo"],
+      "error_strings":  ["Invalid input", "Incomplete command", "Ambiguous command"],
+      "commands": {
+        "find_mac":       "show mac address-table address {mac}",
+        "port_config":    "show running-config interface {port}",
+        "port_state":     "show interfaces {port} | include line protocol",
+        "port_vlan":      "show interfaces {port} switchport | include Access Mode VLAN",
+        "port_errors":    "show interfaces {port} | include input errors",
+        "arp_lookup":     "show ip arp | include {mac}",
+        "lldp_neighbors": "show lldp neighbors {port} detail",
+        "poe_status":     "show power inline {port}",
+        "version":        "show version | include Cisco IOS",
+        "cpu_usage":      "show processes cpu sorted | head 5"
+      }
+    },
+
+    {
+      "id":          "CISCO_NXOS",
+      "brand":       "Cisco",
+      "description": "Cisco NX-OS — Nexus 5000, 7000, 9000 series",
+      "mac_format":  "cisco",
+      "port_keywords":  ["Eth", "eth", "Po"],
+      "uplink_keywords": ["Po", "Eth1/1", "Eth2/"],
+      "error_strings":  ["Invalid command", "Incomplete command"],
+      "commands": {
+        "find_mac":       "show mac address-table address {mac}",
+        "port_config":    "show running-config interface {port}",
+        "port_state":     "show interface {port} brief",
+        "port_vlan":      "show interface {port} switchport | include Access Mode VLAN",
+        "port_errors":    "show interface {port} counters errors",
+        "arp_lookup":     "show ip arp | include {mac}",
+        "lldp_neighbors": "show lldp neighbors interface {port} detail",
+        "poe_status":     "show power inline {port}",
+        "version":        "show version | include NXOS",
+        "cpu_usage":      "show processes cpu sorted | head 5"
+      }
+    },
+
+    {
+      "id":          "ARUBA_AOS_S",
+      "brand":       "Aruba / HPE",
+      "description": "Aruba AOS-S / HPE ProCurve — 2530, 2930, 3810, 5400 series",
+      "mac_format":  "colon",
+      "port_keywords":  ["/"],
+      "uplink_keywords": ["Trk", "lag", "LACP"],
+      "error_strings":  ["Invalid input", "Command not found"],
+      "commands": {
+        "find_mac":       "show mac-address {mac}",
+        "port_config":    "show running-config interface {port}",
+        "port_state":     "show interfaces {port} | include Status",
+        "port_vlan":      "show vlans ports {port}",
+        "port_errors":    "show interfaces {port} | include errors",
+        "arp_lookup":     "show arp | include {mac}",
+        "lldp_neighbors": "show lldp info remote-device {port}",
+        "poe_status":     "show power-over-ethernet {port}",
+        "version":        "show system | include Software",
+        "cpu_usage":      "show cpu"
+      }
+    },
+
+    {
+      "id":          "ARUBA_AOS_CX",
+      "brand":       "Aruba / HPE",
+      "description": "Aruba AOS-CX — CX 6200, 6300, 6400, 8320, 8400 series",
+      "mac_format":  "colon",
+      "port_keywords":  ["/"],
+      "uplink_keywords": ["lag", "1/1/1", "1/1/2"],
+      "error_strings":  ["Unknown command", "Invalid"],
+      "commands": {
+        "find_mac":       "show mac-address-table address {mac}",
+        "port_config":    "show running-config interface {port}",
+        "port_state":     "show interface {port} | include link state",
+        "port_vlan":      "show interface {port}",
+        "port_errors":    "show interface {port} | include errors",
+        "arp_lookup":     "show arp | include {mac}",
+        "lldp_neighbors": "show lldp neighbor-info {port}",
+        "poe_status":     "show poe interface {port}",
+        "version":        "show version | include AOS-CX",
+        "cpu_usage":      "show system resource-utilization"
+      }
+    },
+
+    {
+      "id":          "JUNIPER_JUNOS",
+      "brand":       "Juniper",
+      "description": "Juniper JunOS — EX2300, EX3400, EX4300, EX9200 series",
+      "mac_format":  "colon",
+      "port_keywords":  ["ge-", "xe-", "et-", "fe-"],
+      "uplink_keywords": ["xe-", "et-"],
+      "error_strings":  ["unknown command", "syntax error"],
+      "commands": {
+        "find_mac":       "show ethernet-switching table | match {mac}",
+        "port_config":    "show configuration interfaces {port}",
+        "port_state":     "show interfaces {port} brief",
+        "port_vlan":      "show interfaces {port} | match vlan",
+        "port_errors":    "show interfaces {port} statistics | match errors",
+        "arp_lookup":     "show arp | match {mac}",
+        "lldp_neighbors": "show lldp neighbors interface {port}",
+        "poe_status":     "show poe interface {port}",
+        "version":        "show version | match Junos",
+        "cpu_usage":      "show system processes extensive | head 5"
+      }
+    },
+
+    {
+      "id":          "MIKROTIK_ROS",
+      "brand":       "MikroTik",
+      "description": "MikroTik RouterOS — CRS, CSS and CCR series",
+      "mac_format":  "colon",
+      "port_keywords":  ["ether", "sfp", "bridge", "bonding"],
+      "uplink_keywords": ["sfp", "sfp-plus", "sfp-sfpplus", "bonding"],
+      "error_strings":  ["bad command", "no such item", "syntax error"],
+      "commands": {
+        "find_mac":       "/interface bridge host print where mac-address={mac}",
+        "port_config":    "/interface print detail where name={port}",
+        "port_state":     "/interface print detail where name={port}",
+        "port_vlan":      "/interface bridge vlan print where bridge=bridge",
+        "port_errors":    "/interface ethernet print stats where name={port}",
+        "arp_lookup":     "/ip arp print where mac-address={mac}",
+        "lldp_neighbors": "/ip neighbor print where interface={port}",
+        "poe_status":     "/interface ethernet poe print where name={port}",
+        "version":        "/system resource print",
+        "cpu_usage":      "/system resource print"
+      }
+    },
+
+    {
+      "id":          "DLINK_CLI",
+      "brand":       "D-Link",
+      "description": "D-Link CLI — DGS-1210, DGS-3000, DXS-3600 enterprise series",
+      "mac_format":  "colon",
+      "port_keywords":  ["1", "2", "3", "4", "5", "6", "7", "8"],
+      "uplink_keywords": ["25", "26", "27", "28"],
+      "error_strings":  ["Command not found", "Available commands", "Error"],
+      "commands": {
+        "find_mac":       "show fdb mac_address {mac}",
+        "port_config":    "show config current_config ports {port}",
+        "port_state":     "show ports {port}",
+        "port_vlan":      "show vlan ports {port}",
+        "port_errors":    "show error ports {port}",
+        "arp_lookup":     "show arpentry mac {mac}",
+        "lldp_neighbors": "show lldp neighbor_info ports {port}",
+        "poe_status":     "show inline_power ports {port}",
+        "version":        "show switch",
+        "cpu_usage":      "show utilization cpu"
+      }
+    },
+
+    {
+      "id":          "TPLINK_JETSTREAM",
+      "brand":       "TP-Link",
+      "description": "TP-Link JetStream — T1600G, T2600G, T3700G enterprise series",
+      "mac_format":  "colon",
+      "port_keywords":  ["Gi", "Te", "GigabitEthernet", "TenGigabitEthernet"],
+      "uplink_keywords": ["Te", "TenGigabitEthernet"],
+      "error_strings":  ["Unrecognized command", "Invalid"],
+      "commands": {
+        "find_mac":       "show mac-address-table address {mac}",
+        "port_config":    "show interface GigabitEthernet {port}",
+        "port_state":     "show interface GigabitEthernet {port}",
+        "port_vlan":      "show interface GigabitEthernet {port}",
+        "port_errors":    "show interface GigabitEthernet {port}",
+        "arp_lookup":     "show arp | include {mac}",
+        "lldp_neighbors": "show lldp neighbors-information interface GigabitEthernet {port}",
+        "poe_status":     "show power inline interface GigabitEthernet {port}",
+        "version":        "show version",
+        "cpu_usage":      "show cpu-usage"
+      }
+    }
+
+  ]
+}
