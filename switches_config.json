@@ -15,9 +15,9 @@
     { "id": 6, "ip": "192.168.1.6", "model_id": "HUAWEI_VRP" },
     { "id": 7, "ip": "192.168.1.7", "model_id": "HUAWEI_VRP" },
     { "id": 8, "ip": "192.168.1.8", "model_id": "HUAWEI_VRP" },
-    { "id": 9, "ip": "192.168.0.4", "model_id": "HP_COMWARE5" },
-    { "id": 10, "ip": "192.168.0.5", "model_id": "NETGEAR_PROSAFE" },
-    { "id": 11, "ip": "192.168.0.6", "model_id": "NETGEAR_PROSAFE" }
+    { "id": 9,  "ip": "192.168.0.4", "model_id": "HP_COMWARE5",     "snmp": { "enabled": true, "version": "2c", "port": 161 } },
+    { "id": 10, "ip": "192.168.0.5", "model_id": "NETGEAR_PROSAFE", "snmp": { "enabled": true, "version": "2c", "port": 161 } },
+    { "id": 11, "ip": "192.168.0.6", "model_id": "NETGEAR_PROSAFE", "snmp": { "enabled": true, "version": "2c", "port": 161 } }
   ],
 
   "models": [
