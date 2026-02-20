@@ -24,6 +24,8 @@ I'm sharing it here because I think it can help others dealing with similar situ
 
 **SSH access must be enabled on your switches** for this tool to work. Without it, the MAC search and connectivity features will not function. Refer to your switch documentation for how to enable SSH and create a user with the appropriate permissions.
 
+**SNMP is optional** but recommended as a fallback. If SSH fails on a switch (connection error, authentication failure), the tool can fall back to SNMP for MAC lookups and basic connectivity checks. See the [SNMP Support](#snmp-support) section for details.
+
 ---
 
 ## Features
@@ -33,10 +35,12 @@ I'm sharing it here because I think it can help others dealing with similar situ
 - **Search by IP** — Resolves a device's MAC from the local ARP table or a targeted arp-scan, then traces it to its physical port.
 - **Multiple MAC Search** — Batch search for several MACs in a single run with optional log export.
 - **Switch Connectivity** — Pings each switch and connects via SSH to verify reachability, firmware version and CPU usage.
+- **SNMP Fallback** — Automatic SNMP fallback when SSH fails, supporting both SNMPv2c and SNMPv3. Uses standard BRIDGE-MIB and Q-BRIDGE-MIB for vendor-agnostic MAC lookups.
+- **Configuration Editor** — Built-in interactive editor to manage network settings, switches, and model definitions without editing JSON by hand.
 - **Multi-vendor** — All switch commands are defined in `switches_config.json`. Adding a new vendor requires only a JSON entry, no code changes.
 - **Parallel SSH** — All switches are queried simultaneously using threads, reducing search time from ~64s to ~8s for 8 switches.
 - **Vendor Lookup** — Queries `api.macvendors.com` to identify the hardware manufacturer of any MAC address.
-- **Session credentials** — SSH username and password are asked once per session and reused across all operations. Password input is hidden.
+- **Session credentials** — SSH username and password are asked once per session and reused across all operations. Password input is hidden. SNMP credentials are prompted alongside SSH when SNMP-enabled switches exist.
 - **Hot reload** — Option `[R]` reloads `switches_config.json` at runtime without restarting the script.
 - **Session logs** — Search results can be saved to `/var/log/network_scanner/`.
 
@@ -51,8 +55,10 @@ apt install arp-scan
 
 ### Python packages
 ```bash
-pip install paramiko requests
+pip install paramiko requests pysnmp
 ```
+
+> **Note:** `pysnmp` is optional. If not installed, the tool works normally via SSH — SNMP features will be disabled and a warning is shown in the network status.
 
 Python 3.8 or higher is required.
 
@@ -102,13 +108,13 @@ Global network settings used by the ARP scan and DHCP range detection.
 ---
 
 ### `switches`
-List of switches to query. Each entry assigns an ID, an IP and the model it uses.
+List of switches to query. Each entry assigns an ID, an IP, the model it uses, and optional SNMP configuration.
 
 ```json
 "switches": [
   { "id": 1, "ip": "192.168.1.1", "model_id": "HUAWEI_VRP" },
   { "id": 2, "ip": "192.168.1.2", "model_id": "HUAWEI_VRP" },
-  { "id": 3, "ip": "192.168.1.3", "model_id": "CISCO_IOS"  }
+  { "id": 9, "ip": "192.168.0.4", "model_id": "HP_COMWARE5", "snmp": { "enabled": true, "version": "2c", "port": 161 } }
 ]
 ```
 
@@ -117,6 +123,7 @@ List of switches to query. Each entry assigns an ID, an IP and the model it uses
 | `id` | Switch number shown in results |
 | `ip` | Management IP address |
 | `model_id` | Must match an `id` in the `models` array |
+| `snmp` | *(optional)* SNMP configuration — see [SNMP Support](#snmp-support) |
 
 ---
 
@@ -171,6 +178,106 @@ Different vendors display MACs differently in their CLI:
 
 ---
 
+## SNMP Support
+
+SNMP provides an alternative to SSH for querying MAC address tables and basic switch information. It is designed as a **fallback mechanism**: the tool always tries SSH first and only uses SNMP if SSH fails on a given switch.
+
+### How it works
+
+1. When a search is initiated, each switch is queried via SSH in parallel.
+2. If SSH fails (connection refused, timeout, authentication error) **and** the switch has SNMP enabled in its configuration, the tool automatically falls back to SNMP.
+3. If SSH connects but does not find the MAC, and SNMP is enabled, the tool also tries SNMP as a secondary check.
+4. SNMP results include the port name but not the detailed port information that SSH commands provide (VLAN shows as "N/A (SNMP)").
+
+### SNMP versions
+
+| Version | Authentication | Use case |
+|---------|---------------|----------|
+| **SNMPv2c** | Community string | Simple setup, legacy devices |
+| **SNMPv3** | Username + Auth + Privacy | Secure environments, modern requirements |
+
+### Enabling SNMP on a switch
+
+Add the `snmp` field to a switch entry in `switches_config.json`:
+
+```json
+{ "id": 9, "ip": "192.168.0.4", "model_id": "HP_COMWARE5", "snmp": { "enabled": true, "version": "2c", "port": 161 } }
+```
+
+For SNMPv3:
+```json
+{ "id": 10, "ip": "192.168.0.5", "model_id": "NETGEAR_PROSAFE", "snmp": { "enabled": true, "version": "3", "port": 161 } }
+```
+
+You can also enable SNMP through the built-in [Configuration Editor](#configuration-editor).
+
+| Field | Description |
+|-------|-------------|
+| `enabled` | `true` to activate SNMP fallback on this switch |
+| `version` | `"2c"` or `"3"` |
+| `port` | SNMP port (default `161`) |
+
+### Credentials
+
+SNMP credentials are **not stored** in the configuration file. They are prompted at runtime alongside SSH credentials:
+
+- **SNMPv2c** — Community string (defaults to `public` if left empty)
+- **SNMPv3** — Username, auth protocol (MD5/SHA), auth password, priv protocol (DES/AES), priv password
+
+The tool detects which SNMP versions are needed across all configured switches and only prompts for the relevant credentials.
+
+### Standard MIBs used
+
+SNMP MAC lookups use standard MIBs that work across vendors:
+
+| MIB | OID | Purpose |
+|-----|-----|---------|
+| Q-BRIDGE-MIB `dot1qTpFdbPort` | `.1.3.6.1.2.1.17.7.1.2.2.1.2` | VLAN-aware MAC table (tried first) |
+| BRIDGE-MIB `dot1dTpFdbPort` | `.1.3.6.1.2.1.17.4.3.1.2` | Legacy MAC table (fallback) |
+| BRIDGE-MIB `dot1dBasePortIfIndex` | `.1.3.6.1.2.1.17.1.4.1.2` | Bridge port → ifIndex mapping |
+| IF-MIB `ifName` | `.1.3.6.1.2.1.31.1.1.1.1` | ifIndex → port name |
+| IF-MIB `ifDescr` | `.1.3.6.1.2.1.2.2.1.2` | ifIndex → port description (fallback) |
+| SNMPv2-MIB `sysDescr` | `.1.3.6.1.2.1.1.1.0` | System description (connectivity check) |
+| HOST-RESOURCES-MIB `hrProcessorLoad` | `.1.3.6.1.2.1.25.3.3.1.2` | CPU usage (connectivity check) |
+
+### Requirements
+
+```bash
+pip install pysnmp
+```
+
+If `pysnmp` is not installed, the tool works normally — SNMP features are simply disabled and a warning appears in the network status display.
+
+---
+
+## Configuration Editor
+
+The built-in configuration editor (menu option `[E]`) allows you to manage all aspects of `switches_config.json` without editing the file manually.
+
+### Available operations
+
+| Option | Description |
+|--------|-------------|
+| **[1] Edit network settings** | Modify interface, network CIDR, DHCP start/end |
+| **[2] List switches** | Display all switches with ID, IP, model, and SNMP status |
+| **[3] Add switch** | Interactive wizard: ID, IP, model selection, optional SNMP |
+| **[4] Edit switch** | Modify any field of an existing switch |
+| **[5] Delete switch** | Remove a switch (with confirmation) |
+| **[6] List models** | Display all models with brand, MAC format, and usage count |
+| **[7] Add model** | Interactive wizard: all fields including CLI commands |
+| **[8] Edit model** | Modify any field of an existing model (Enter to keep, `-` to delete a command) |
+| **[9] Delete model** | Remove a model (blocked if any switch is using it) |
+
+### Notes
+
+- All changes are saved to `switches_config.json` immediately after each operation.
+- The configuration is automatically reloaded when you exit the editor (option `[B]`).
+- When adding a switch, the model ID must match an existing model — the editor shows available models.
+- When deleting a model, the editor checks whether any switch references it and blocks deletion if so.
+- Input fields show current values in brackets; press Enter to keep the current value unchanged.
+
+---
+
 ## Supported models (included in `switches_config.json`)
 
 | Model ID | Brand | Covers |
@@ -191,12 +298,21 @@ Different vendors display MACs differently in their CLI:
 
 ## Adding a new switch brand or model
 
+### Option A: Edit the JSON file directly
+
 1. Open `switches_config.json`
 2. Add a new entry to the `models` array with the correct CLI commands for that brand
 3. Add your switch(es) to the `switches` array referencing the new `model_id`
 4. Press `[R]` in the running script to reload without restarting
 
-No Python code changes are required.
+### Option B: Use the built-in configuration editor
+
+1. Press `[E]` in the main menu to open the editor
+2. Select `[7] Add model` and follow the interactive wizard
+3. Select `[3] Add switch` and assign the new model to your switch
+4. Exit with `[B]` — the config reloads automatically
+
+No Python code changes are required in either case.
 
 ---
 
@@ -209,6 +325,15 @@ The ARP scan detects all devices that respond on the network. When listing IPs f
 ### Huawei SSH compatibility
 
 Some Huawei switch firmwares reject direct `exec_command` via Paramiko with an *"Unable to open channel"* error. The `ssh_exec()` function handles this automatically by falling back to `invoke_shell` when needed. This fallback applies to all vendors.
+
+### SNMP limitations
+
+SNMP MAC lookups use standard MIBs and work across most managed switches. However:
+
+- **Port details are limited.** SNMP can identify the port where a MAC is learned, but does not provide the same level of detail as SSH commands (running config, LLDP neighbors, PoE status, etc.).
+- **VLAN information** is reported as "N/A (SNMP)" since the standard MIBs do not provide per-port VLAN assignment in a consistent way across vendors.
+- **Some switches** may require SNMP to be enabled and configured separately from SSH access. Refer to your vendor documentation.
+- **Community strings** should be treated as credentials — use non-default values in production environments.
 
 ### Logs
 
@@ -230,9 +355,10 @@ Contributions are welcome. Some ideas for improvement:
 
 - Test and refine commands for Cisco, Aruba, Juniper, MikroTik, D-Link and TP-Link models
 - Add support for additional vendors (Extreme Networks, Brocade, Fortinet, etc.)
-- Add SNMP as an alternative to SSH for vendors that support it better
 - Export results to JSON or HTML
-- Add a configuration file editor within the menu
+- Add SNMP-based port detail collection for specific vendors
+- Add SNMPv3 engine ID discovery for advanced deployments
+- Web-based dashboard for real-time monitoring
 
 ---
 
